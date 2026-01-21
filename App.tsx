@@ -293,7 +293,7 @@ const App: React.FC = () => {
       
       <footer className="mt-8 text-center text-slate-400 text-sm max-w-2xl">
         <p>
-          Game được tạo bởi Trọng Khiêm. Mọi kết quả được lưu trữ tại: {window.location.hostname}
+          Game được tạo bởi Trọng Khiêm. Mọi kết quả được lưu trữ tại Firebase và tôi có quyền chỉnh sửa.
         </p>
       </footer>
     </div>
