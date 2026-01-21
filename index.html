@@ -1,24 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Natural Selection Simulator</title>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô Phỏng Chọn Lọc Tự Nhiên (Online)</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              leaf: {
-                light: '#4ade80',
-                DEFAULT: '#22c55e', // green-500
-                dark: '#15803d',
-              }
+              leaf: { DEFAULT: '#22c55e', dark: '#15803d' }
             },
             animation: {
               'wiggle': 'wiggle 2s ease-in-out infinite',
-              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             },
             keyframes: {
               wiggle: {
@@ -31,42 +32,455 @@
       }
     </script>
     <style>
-      /* Custom cursor for predator feel */
-      .predator-cursor {
-        cursor: crosshair;
-      }
-      body {
-        background-color: #f0fdf4;
-      }
-      
-      /* Organic Leaf Texture Pattern */
-      .leaf-texture {
-        background-color: #22c55e;
-        background-image: 
-          radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05) 0%, transparent 20%),
-          radial-gradient(circle at 90% 80%, rgba(0,0,0,0.05) 0%, transparent 20%),
-          repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, transparent 2px, transparent 10px);
-      }
+        body { font-family: 'Inter', sans-serif; background-color: #f5f5f4; user-select: none; }
+        .predator-cursor { cursor: crosshair; }
+        .leaf-texture {
+            background-color: #22c55e;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0,0,0,0.05) 0%, transparent 20%),
+                repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, transparent 2px, transparent 10px);
+            position: relative;
+            overflow: hidden;
+        }
+        .worm { position: absolute; transition: transform 0.1s; cursor: pointer; }
+        .worm:active { transform: scale(0.9) !important; }
+        .worm-green { filter: none; opacity: 0.85; }
+        .worm-other { filter: drop-shadow(0 2px 2px rgba(0,0,0,0.4)); }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
-    "firebase/": "https://esm.sh/firebase@^12.8.0/"
-  }
-}
-</script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body>
-    <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
+<body class="flex flex-col items-center min-h-screen p-4">
+
+    <!-- Header -->
+    <header class="w-full max-w-4xl bg-white p-4 rounded-xl shadow-sm flex justify-between items-center mb-6">
+        <div class="flex items-center gap-3">
+            <div class="bg-green-100 p-2 rounded-lg text-green-700">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Mô phỏng Chọn Lọc Tự Nhiên</h1>
+                <p class="text-xs text-slate-500">Bài học: Cơ chế Ngụy trang (Camouflage)</p>
+            </div>
+        </div>
+        <div class="text-right">
+            <span class="text-xs text-slate-400 block">THỜI GIAN</span>
+            <span id="timerDisplay" class="text-2xl font-bold text-slate-700">10s</span>
+        </div>
+    </header>
+
+    <!-- Game Container -->
+    <main id="gameArea" class="relative w-full max-w-4xl aspect-[16/9] bg-white rounded-2xl shadow-xl overflow-hidden border-4 border-white">
+        
+        <!-- Background Leaf -->
+        <div id="leafBackground" class="w-full h-full leaf-texture transition-colors duration-500">
+            <div class="absolute top-1/2 left-0 w-full h-1 bg-white/10 -translate-y-1/2 rounded-full blur-[1px]"></div>
+            <div id="wormsContainer" class="w-full h-full absolute inset-0"></div>
+
+            <!-- SCREENS -->
+            
+            <!-- 1. Menu Screen -->
+            <div id="menuScreen" class="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center z-20 text-white p-6 text-center">
+                <!-- Secret Admin Button (Invisible until hover) -->
+                <button id="btnSecretReset" class="absolute top-4 right-4 w-10 h-10 opacity-0 hover:opacity-100 bg-red-500 rounded-full flex items-center justify-center transition-opacity duration-300 shadow-lg cursor-pointer z-50" title="Reset Data">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
+
+                <h2 class="text-4xl font-bold mb-4 drop-shadow-md">Sẵn sàng săn mồi?</h2>
+                <p class="max-w-md mb-8 text-lg opacity-90">
+                    Bạn là chim sâu. Hãy bắt càng nhiều sâu càng tốt trong 10 giây.
+                </p>
+                
+                <!-- Status Loader -->
+                <div id="loadingStatus" class="mb-4 text-yellow-300 bg-yellow-900/50 p-2 rounded text-sm animate-pulse border border-yellow-500/50">
+                    Đang kết nối đến máy chủ dữ liệu...
+                </div>
+
+                <button id="btnStart" disabled class="flex items-center gap-2 bg-green-500 hover:bg-green-400 disabled:bg-gray-500 text-white px-8 py-3 rounded-full font-bold text-lg shadow-lg transition-all transform hover:-translate-y-1">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Bắt đầu chơi
+                </button>
+                <div class="mt-4 text-sm opacity-75">
+                    Số lượt đã chơi trên toàn server: <strong id="totalPlayersDisplay">...</strong>
+                </div>
+            </div>
+
+            <!-- 2. Finished Screen -->
+            <div id="resultScreen" class="hidden absolute inset-0 bg-white/95 backdrop-blur-md z-30 p-6 overflow-y-auto">
+                <div class="max-w-2xl mx-auto text-center">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2">Kết Quả Chung Cuộc</h2>
+                    <p class="text-green-600 mb-6 flex items-center justify-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        Cập nhật Real-time từ <span id="resultTotalPlayers" class="font-bold">0</span> lượt chơi
+                    </p>
+
+                    <!-- Chart Canvas -->
+                    <div class="w-full h-64 relative mb-4">
+                        <canvas id="resultsChart"></canvas>
+                    </div>
+
+                    <!-- Personal Stats -->
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-left mb-6 flex justify-between">
+                        <div>
+                            <p class="font-bold text-blue-900 mb-1">Kết quả của bạn:</p>
+                            <ul class="text-sm text-blue-800 space-y-1">
+                                <li>Sâu xanh (Ngụy trang): Bắt được <b id="myGreen">0</b></li>
+                                <li>Sâu màu (Nổi bật): Bắt được <b id="myOthers">0</b></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center gap-4">
+                        <button id="btnRestart" class="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg font-bold">
+                            Về Menu
+                        </button>
+                        <button id="btnResetData" class="text-red-400 hover:text-red-600 px-4 py-2 text-sm border border-transparent hover:border-red-200 rounded">
+                            Admin Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="mt-8 text-center text-slate-400 text-sm">
+        <p>Game kết nối dữ liệu Real-time qua Google Firebase</p>
+    </footer>
+
+    <!-- LOGIC SCRIPT -->
+    <script type="module">
+        // --- 1. FIREBASE CONFIGURATION ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // ==========================================
+        // QUAN TRỌNG: Thay thế đoạn bên dưới bằng Config của bạn
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "THAY_API_KEY_CUA_BAN_VAO_DAY",
+            authDomain: "project-id.firebaseapp.com",
+            projectId: "project-id",
+            storageBucket: "project-id.appspot.com",
+            messagingSenderId: "00000000000",
+            appId: "1:000000000:web:xxxxx"
+        };
+
+        // --- VALIDATION: CHECK IF CONFIG IS SET ---
+        if (firebaseConfig.projectId === "project-id" || firebaseConfig.apiKey.includes("THAY_API_KEY")) {
+            const menuScreen = document.getElementById('menuScreen');
+            menuScreen.innerHTML = `
+                <div class="bg-red-600/90 text-white p-6 rounded-xl shadow-2xl max-w-lg mx-auto backdrop-blur-md border border-red-400">
+                    <h3 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+                        Chưa cấu hình Firebase!
+                    </h3>
+                    <p class="mb-4 text-white/90">Bạn chưa thay thế mã kết nối trong file <code>index.html</code>.</p>
+                    <div class="text-left bg-black/30 p-4 rounded-lg mb-4 text-sm font-mono overflow-x-auto">
+                        const firebaseConfig = {<br>
+                        &nbsp;&nbsp;apiKey: "...",<br>
+                        &nbsp;&nbsp;projectId: "...",<br>
+                        &nbsp;&nbsp;...<br>
+                        };
+                    </div>
+                    <p class="text-sm mb-2">Vui lòng quay lại Firebase Console:</p>
+                    <ol class="list-decimal pl-5 space-y-1 text-sm text-white/80 mb-6 text-left">
+                        <li>Vào <b>Project Settings</b> (biểu tượng bánh răng).</li>
+                        <li>Kéo xuống mục <b>Your apps</b>.</li>
+                        <li>Copy đoạn mã <code>firebaseConfig</code>.</li>
+                        <li>Dán đè lên biến <code>firebaseConfig</code> trong file code này.</li>
+                    </ol>
+                    <button onclick="location.reload()" class="w-full bg-white text-red-600 font-bold py-2 rounded hover:bg-gray-100">Đã sửa xong? Tải lại trang</button>
+                </div>
+            `;
+            throw new Error("Game stopped: Firebase config is missing.");
+        }
+
+        // Initialize Firebase
+        let db;
+        let statsRef;
+        const COLLECTION_NAME = "evolution_game";
+        const DOC_ID = "global_stats_v1";
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            statsRef = doc(db, COLLECTION_NAME, DOC_ID);
+        } catch (e) {
+            console.error("Lỗi khởi tạo Firebase:", e);
+            document.getElementById('loadingStatus').innerText = "Lỗi Config Firebase (Xem Console)";
+            document.getElementById('loadingStatus').className = "mb-4 text-red-500 font-bold bg-red-100 p-2 rounded";
+        }
+
+        // --- 2. GAME STATE ---
+        const GAME_DURATION = 10;
+        const GREEN_COUNT = 25;
+        const OTHERS_COUNT = 25;
+        
+        let gameState = {
+            isPlaying: false,
+            timeLeft: GAME_DURATION,
+            worms: [],
+            myStats: { green: 0, others: 0 },
+            globalStats: { totalGreen: 0, caughtGreen: 0, totalOthers: 0, caughtOthers: 0, roundsPlayed: 0 }
+        };
+        
+        let timerInterval;
+        let chartInstance = null;
+
+        // --- 3. DOM ELEMENTS ---
+        const ui = {
+            menu: document.getElementById('menuScreen'),
+            result: document.getElementById('resultScreen'),
+            gameArea: document.getElementById('gameArea'),
+            leafBg: document.getElementById('leafBackground'),
+            wormsContainer: document.getElementById('wormsContainer'),
+            timer: document.getElementById('timerDisplay'),
+            btnStart: document.getElementById('btnStart'),
+            btnRestart: document.getElementById('btnRestart'),
+            btnReset: document.getElementById('btnResetData'),
+            btnSecretReset: document.getElementById('btnSecretReset'),
+            loader: document.getElementById('loadingStatus'),
+            totalPlayers: document.getElementById('totalPlayersDisplay'),
+            resultTotalPlayers: document.getElementById('resultTotalPlayers'),
+            myGreen: document.getElementById('myGreen'),
+            myOthers: document.getElementById('myOthers')
+        };
+
+        // --- 4. FIREBASE LOGIC ---
+        function initRealtimeListener() {
+            if (!statsRef) return;
+
+            // Lắng nghe thay đổi dữ liệu theo thời gian thực
+            onSnapshot(statsRef, (docSnap) => {
+                ui.loader.style.display = 'none';
+                ui.btnStart.disabled = false;
+
+                if (docSnap.exists()) {
+                    gameState.globalStats = docSnap.data();
+                    updateUIStats();
+                } else {
+                    // Nếu chưa có dữ liệu thì tạo mới
+                    setDoc(statsRef, gameState.globalStats).catch(err => {
+                         console.error("Lỗi tạo doc:", err);
+                         // Nếu lỗi permission-denied ở đây => Cần bật Firestore trong Console
+                         if(err.code === 'permission-denied') {
+                             ui.loader.style.display = 'block';
+                             ui.loader.innerHTML = "LỖI: Chưa bật Database trên Firebase Console!<br>Vào Console -> Build -> Firestore -> Create Database -> Test Mode";
+                             ui.loader.className = "mb-4 text-red-600 bg-red-100 p-2 rounded text-xs text-left";
+                         }
+                    });
+                }
+            }, (err) => {
+                console.error("Lỗi kết nối:", err);
+                if(err.code === 'permission-denied' || err.message.includes('project-id')) {
+                     ui.loader.style.display = 'block';
+                     ui.loader.innerHTML = "LỖI KẾT NỐI: Project ID không hợp lệ hoặc chưa có quyền.<br>Hãy kiểm tra lại biến firebaseConfig trong code.";
+                } else {
+                     ui.loader.innerText = "Lỗi kết nối mạng: " + err.code;
+                }
+                ui.loader.className = "mb-4 text-red-600 font-bold bg-red-100 p-2 rounded";
+            });
+        }
+
+        async function registerRound() {
+            if (!statsRef) return;
+            try {
+                await updateDoc(statsRef, {
+                    totalGreen: increment(GREEN_COUNT),
+                    totalOthers: increment(OTHERS_COUNT),
+                    roundsPlayed: increment(1)
+                });
+            } catch (e) { console.error("Lỗi ghi dữ liệu round:", e); }
+        }
+
+        async function recordCatch(type) {
+            if (!statsRef) return;
+            try {
+                if (type === 'green') {
+                    await updateDoc(statsRef, { caughtGreen: increment(1) });
+                } else {
+                    await updateDoc(statsRef, { caughtOthers: increment(1) });
+                }
+            } catch (e) { console.error("Lỗi ghi dữ liệu bắt:", e); }
+        }
+
+        async function resetServerData() {
+            if (!statsRef) return;
+            
+            // ==========================================
+            // THAY ĐỔI MẬT KHẨU ADMIN TẠI DÒNG DƯỚI ĐÂY
+            // ==========================================
+            const ADMIN_PASSWORD = "khiemdt"; 
+            
+            const password = prompt("Nhập mật khẩu Admin:");
+            if (password === ADMIN_PASSWORD) {
+                if(confirm("XÓA TOÀN BỘ DỮ LIỆU LỚP HỌC?")) {
+                    await setDoc(statsRef, { totalGreen: 0, caughtGreen: 0, totalOthers: 0, caughtOthers: 0, roundsPlayed: 0 });
+                    alert("Đã reset về 0.");
+                }
+            } else {
+                alert("Sai mật khẩu");
+            }
+        }
+
+        // --- 5. GAME LOGIC ---
+        function createWorms() {
+            ui.wormsContainer.innerHTML = '';
+            gameState.worms = [];
+
+            const randomPos = () => ({
+                x: Math.random() * 90 + 5,
+                y: Math.random() * 80 + 10,
+                rot: Math.random() * 360
+            });
+
+            // 25 Green Worms
+            for(let i=0; i<GREEN_COUNT; i++) createSingleWorm('green', randomPos());
+            // 25 Other Worms
+            for(let i=0; i<OTHERS_COUNT; i++) {
+                const color = Math.random() > 0.5 ? 'red' : 'yellow';
+                createSingleWorm(color, randomPos());
+            }
+        }
+
+        function createSingleWorm(color, pos) {
+            const el = document.createElement('div');
+            el.className = `worm ${color === 'green' ? 'worm-green' : 'worm-other'} w-10 h-10 md:w-12 md:h-12`;
+            el.style.left = pos.x + '%';
+            el.style.top = pos.y + '%';
+            el.style.transform = `translate(-50%, -50%) rotate(${pos.rot}deg)`;
+            
+            let fillColor = color === 'green' ? '#22c55e' : (color === 'red' ? '#ef4444' : '#eab308');
+            let strokeColor = color === 'green' ? '#16a34a' : (color === 'red' ? '#b91c1c' : '#ca8a04');
+            let opacity = color === 'green' ? '0.6' : '1';
+
+            el.innerHTML = `
+                <svg viewBox="0 0 100 60" class="w-full h-full animate-wiggle overflow-visible">
+                     <path d="M20 40 L20 50 M40 40 L40 50 M60 40 L60 50 M80 40 L80 50" stroke="${strokeColor}" stroke-width="3" />
+                     <circle cx="90" cy="30" r="12" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" fill-opacity="${opacity}" />
+                     <circle cx="70" cy="30" r="13" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" fill-opacity="${opacity}" />
+                     <circle cx="50" cy="30" r="14" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" fill-opacity="${opacity}" />
+                     <circle cx="30" cy="30" r="13" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" fill-opacity="${opacity}" />
+                     <circle cx="12" cy="30" r="12" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" fill-opacity="${opacity}" />
+                     <circle cx="8" cy="25" r="2" fill="black" />
+                     <circle cx="8" cy="35" r="2" fill="black" />
+                </svg>
+            `;
+
+            el.onclick = (e) => {
+                e.stopPropagation();
+                if (!gameState.isPlaying) return;
+                
+                el.style.transform = `translate(-50%, -50%) scale(1.5) rotate(${pos.rot}deg)`;
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 200);
+
+                if (color === 'green') {
+                    gameState.myStats.green++;
+                    recordCatch('green');
+                } else {
+                    gameState.myStats.others++;
+                    recordCatch('other');
+                }
+            };
+            ui.wormsContainer.appendChild(el);
+        }
+
+        function startGame() {
+            gameState.isPlaying = true;
+            gameState.timeLeft = GAME_DURATION;
+            gameState.myStats = { green: 0, others: 0 };
+            
+            ui.menu.classList.add('hidden');
+            ui.result.classList.add('hidden');
+            ui.leafBg.classList.add('predator-cursor');
+            
+            createWorms();
+            updateTimerUI();
+            registerRound();
+
+            timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                updateTimerUI();
+                if (gameState.timeLeft <= 0) endGame();
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            gameState.isPlaying = false;
+            ui.leafBg.classList.remove('predator-cursor');
+            ui.result.classList.remove('hidden');
+            ui.myGreen.innerText = gameState.myStats.green;
+            ui.myOthers.innerText = gameState.myStats.others;
+            renderChart();
+        }
+
+        function updateTimerUI() {
+            ui.timer.innerText = gameState.timeLeft + 's';
+            if(gameState.timeLeft <= 3) ui.timer.classList.add('text-red-500');
+            else ui.timer.classList.remove('text-red-500');
+        }
+
+        function updateUIStats() {
+            ui.totalPlayers.innerText = gameState.globalStats.roundsPlayed;
+            ui.resultTotalPlayers.innerText = gameState.globalStats.roundsPlayed;
+            if (gameState.globalStats.roundsPlayed > 0 && !gameState.isPlaying && !ui.result.classList.contains('hidden')) {
+                renderChart();
+            }
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            const g = gameState.globalStats;
+            
+            const greenSurvivors = g.totalGreen - g.caughtGreen;
+            const otherSurvivors = g.totalOthers - g.caughtOthers;
+            const greenSurvivalRate = g.totalGreen > 0 ? (greenSurvivors / g.totalGreen * 100).toFixed(1) : 0;
+            const otherSurvivalRate = g.totalOthers > 0 ? (otherSurvivors / g.totalOthers * 100).toFixed(1) : 0;
+
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [`Sâu Xanh (Sống: ${greenSurvivalRate}%)`, `Sâu Màu (Sống: ${otherSurvivalRate}%)`],
+                    datasets: [
+                        {
+                            label: 'Bị bắt (Ăn thịt)',
+                            data: [g.caughtGreen, g.caughtOthers],
+                            backgroundColor: ['#22c55e', '#ef4444'],
+                            borderWidth: 1
+                        },
+                         {
+                            label: 'Sống sót',
+                            data: [greenSurvivors, otherSurvivors],
+                            backgroundColor: ['#dcfce7', '#fee2e2'],
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+                }
+            });
+        }
+
+        ui.btnStart.onclick = startGame;
+        ui.btnRestart.onclick = () => {
+            ui.result.classList.add('hidden');
+            ui.menu.classList.remove('hidden');
+            createWorms();
+        };
+        ui.btnReset.onclick = resetServerData;
+        if(ui.btnSecretReset) ui.btnSecretReset.onclick = resetServerData;
+
+        // Init Listener
+        initRealtimeListener();
+
+    </script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>
