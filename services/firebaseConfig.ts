@@ -2,10 +2,11 @@
 // Vào Project Settings -> General -> Your apps -> SDK setup and configuration -> Config
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyD-YOUR_API_KEY_HERE",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+apiKey: "AIzaSyDdZ8L7zsLcyU4UC_rzDPGu7XwwoWP0DqU",
+  authDomain: "gametimsau.firebaseapp.com",
+  projectId: "gametimsau",
+  storageBucket: "gametimsau.firebasestorage.app",
+  messagingSenderId: "441210549495",
+  appId: "1:441210549495:web:599c3096a16d1df8cd8ff2",
+  measurementId: "G-G4YWR4CC6J"
 };
