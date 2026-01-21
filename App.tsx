@@ -9,7 +9,7 @@ import { DataService } from './services/dataService';
 const GAME_DURATION = 10; // seconds
 const GREEN_COUNT = 25;
 const OTHERS_COUNT = 25;
-const ADMIN_PASSWORD = "admin"; // Mật khẩu đơn giản để giáo viên xóa dữ liệu
+const ADMIN_PASSWORD = "khiemdt"; // Mật khẩu đơn giản để giáo viên xóa dữ liệu
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(GameState.MENU);
