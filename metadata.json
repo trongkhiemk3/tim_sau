@@ -1,0 +1,5 @@
+{
+  "name": "Natural Selection Simulator",
+  "description": "An interactive simulation of evolutionary camouflage mechanisms where players act as predators catching prey on a leaf.",
+  "requestFramePermissions": []
+}
