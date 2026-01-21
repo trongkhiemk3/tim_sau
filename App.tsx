@@ -50,7 +50,7 @@ const App: React.FC = () => {
     
     // Create Green Worms (Camouflaged)
     for (let i = 0; i < GREEN_COUNT; i++) {
-      const requiresTwoClicks = Math.random() < 0.65;
+      const requiresTwoClicks = Math.random() < 0.75;
       newWorms.push({
         id: `g-${i}`,
         x: Math.random() * 90 + 5,
