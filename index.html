@@ -165,36 +165,6 @@
             appId: "1:000000000:web:xxxxx"
         };
 
-        // --- VALIDATION: CHECK IF CONFIG IS SET ---
-        if (firebaseConfig.projectId === "project-id" || firebaseConfig.apiKey.includes("THAY_API_KEY")) {
-            const menuScreen = document.getElementById('menuScreen');
-            menuScreen.innerHTML = `
-                <div class="bg-red-600/90 text-white p-6 rounded-xl shadow-2xl max-w-lg mx-auto backdrop-blur-md border border-red-400">
-                    <h3 class="text-2xl font-bold mb-4 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
-                        Chưa cấu hình Firebase!
-                    </h3>
-                    <p class="mb-4 text-white/90">Bạn chưa thay thế mã kết nối trong file <code>index.html</code>.</p>
-                    <div class="text-left bg-black/30 p-4 rounded-lg mb-4 text-sm font-mono overflow-x-auto">
-                        const firebaseConfig = {<br>
-                        &nbsp;&nbsp;apiKey: "...",<br>
-                        &nbsp;&nbsp;projectId: "...",<br>
-                        &nbsp;&nbsp;...<br>
-                        };
-                    </div>
-                    <p class="text-sm mb-2">Vui lòng quay lại Firebase Console:</p>
-                    <ol class="list-decimal pl-5 space-y-1 text-sm text-white/80 mb-6 text-left">
-                        <li>Vào <b>Project Settings</b> (biểu tượng bánh răng).</li>
-                        <li>Kéo xuống mục <b>Your apps</b>.</li>
-                        <li>Copy đoạn mã <code>firebaseConfig</code>.</li>
-                        <li>Dán đè lên biến <code>firebaseConfig</code> trong file code này.</li>
-                    </ol>
-                    <button onclick="location.reload()" class="w-full bg-white text-red-600 font-bold py-2 rounded hover:bg-gray-100">Đã sửa xong? Tải lại trang</button>
-                </div>
-            `;
-            throw new Error("Game stopped: Firebase config is missing.");
-        }
-
         // Initialize Firebase
         let db;
         let statsRef;
@@ -262,23 +232,25 @@
                     // Nếu chưa có dữ liệu thì tạo mới
                     setDoc(statsRef, gameState.globalStats).catch(err => {
                          console.error("Lỗi tạo doc:", err);
-                         // Nếu lỗi permission-denied ở đây => Cần bật Firestore trong Console
                          if(err.code === 'permission-denied') {
                              ui.loader.style.display = 'block';
-                             ui.loader.innerHTML = "LỖI: Chưa bật Database trên Firebase Console!<br>Vào Console -> Build -> Firestore -> Create Database -> Test Mode";
+                             ui.loader.innerHTML = "LỖI QUYỀN (Permission Denied):<br>Kiểm tra tab 'Rules' trong Firestore Console.";
                              ui.loader.className = "mb-4 text-red-600 bg-red-100 p-2 rounded text-xs text-left";
                          }
                     });
                 }
             }, (err) => {
                 console.error("Lỗi kết nối:", err);
-                if(err.code === 'permission-denied' || err.message.includes('project-id')) {
-                     ui.loader.style.display = 'block';
-                     ui.loader.innerHTML = "LỖI KẾT NỐI: Project ID không hợp lệ hoặc chưa có quyền.<br>Hãy kiểm tra lại biến firebaseConfig trong code.";
+                ui.loader.style.display = 'block';
+                ui.loader.className = "mb-4 text-red-600 font-bold bg-red-100 p-2 rounded";
+                
+                if(err.code === 'permission-denied') {
+                     ui.loader.innerHTML = "LỖI QUYỀN (Permission Denied):<br>Vào Firebase Console > Firestore Database > Rules > Sửa thành 'allow read, write: if true;' để test.";
+                } else if (err.message && err.message.includes('project-id')) {
+                     ui.loader.innerHTML = "LỖI CẤU HÌNH: Bạn chưa thay thế mã Config trong file code!";
                 } else {
                      ui.loader.innerText = "Lỗi kết nối mạng: " + err.code;
                 }
-                ui.loader.className = "mb-4 text-red-600 font-bold bg-red-100 p-2 rounded";
             });
         }
 
@@ -315,6 +287,7 @@
             const password = prompt("Nhập mật khẩu Admin:");
             if (password === ADMIN_PASSWORD) {
                 if(confirm("XÓA TOÀN BỘ DỮ LIỆU LỚP HỌC?")) {
+                    // Sử dụng setDoc để ghi đè lại dữ liệu sạch
                     await setDoc(statsRef, { totalGreen: 0, caughtGreen: 0, totalOthers: 0, caughtOthers: 0, roundsPlayed: 0 });
                     alert("Đã reset về 0.");
                 }
