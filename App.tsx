@@ -231,7 +231,7 @@ const App: React.FC = () => {
                  </button>
                  
                  <div className="mt-4 p-3 bg-white/10 rounded-lg text-sm text-white/80">
-                   Tổng số người tham gia quần thể: <strong>{globalStats.roundsPlayed}</strong>
+                   Tổng số chim sâu trong quần thể: <strong>{globalStats.roundsPlayed}</strong>
                  </div>
                </div>
              </div>
