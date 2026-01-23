@@ -7,6 +7,7 @@
     <meta charset="UTF-8" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light">
 
     <title>TÌM SÂU</title>
 
@@ -62,41 +63,30 @@
 
     </script>
 
-    <style>
+   <style>
+  /* Custom cursor for predator feel */
+  .predator-cursor {
+    cursor: crosshair;
+  }
 
-      /* Custom cursor for predator feel */
-
-      .predator-cursor {
-
-        cursor: crosshair;
-
-      }
-
-      body {
-
-        background-color: #f0fdf4;
-
-      }
-
-      
-
-      /* Organic Leaf Texture Pattern */
-
-      .leaf-texture {
-
-        background-color: #22c55e;
-
-        background-image: 
-
-          radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05) 0%, transparent 20%),
-
-          radial-gradient(circle at 90% 80%, rgba(0,0,0,0.05) 0%, transparent 20%),
-
-          repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, transparent 2px, transparent 10px);
-
-      }
-
-    </style>
+  body {
+    background-color: #f0fdf4;
+    color-scheme: light; /* Đảm bảo body luôn hiểu là chế độ sáng */
+  }
+  
+  /* Organic Leaf Texture Pattern */
+  .leaf-texture {
+    background-color: #22c55e;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05) 0%, transparent 20%),
+      radial-gradient(circle at 90% 80%, rgba(0,0,0,0.05) 0%, transparent 20%),
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, transparent 2px, transparent 10px);
+    
+    /* Dòng mã quan trọng nhất để chống Forced Dark Mode */
+    forced-color-adjust: none; 
+    -webkit-print-color-adjust: exact;
+  }
+   </style> 
 
   <script type="importmap">
 
