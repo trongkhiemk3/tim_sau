@@ -21,7 +21,7 @@ export const Worm: React.FC<WormProps> = ({ worm, onCatch }) => {
           body: 'fill-green-500/60', 
           stroke: 'stroke-green-600/40', 
           eyes: 'fill-green-800/30', 
-          containerClass: 'opacity-90' 
+          containerClass: 'opacity-95' 
         };
       case WormColor.RED:
         return {
