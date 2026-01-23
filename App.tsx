@@ -188,7 +188,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Game Area */}
-      <main className="relative w-full max-w-4xl aspect-[4/3] md:aspect-[16/9] bg-white rounded-2xl shadow-xl overflow-hidden border-4 border-white">
+      <main className="relative w-full max-w-4xl h-[70vh] md:h-auto md:aspect-[16/9] bg-white rounded-2xl shadow-xl overflow-hidden border-4 border-white">
         
         {/* The Leaf Background */}
         <div className={`w-full h-full relative overflow-hidden transition-colors duration-500 leaf-texture ${gameState === GameState.PLAYING ? 'predator-cursor' : ''}`}>
