@@ -5,6 +5,9 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
+      // THÊM DÒNG NÀY: Giúp Vite hiểu ứng dụng đang chạy trong thư mục /timsau/
+      base: '/timsau/', 
+      
       server: {
         port: 3000,
         host: '0.0.0.0',
